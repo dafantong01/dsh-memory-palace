@@ -1,4 +1,4 @@
-# dsh-memory-palace（记忆回廊）
+# 记忆回廊（dsh-memory-palace）
 
 把会话原文按「一轮对话」为单位、分类归档到**当前工作区**的 `memory-palace/` 目录。
 目的：在 DSH 自动压缩之前，先把较早的完整原文落到磁盘，压缩后还能查回原话。
@@ -225,7 +225,7 @@ dsh plugin --profile <profile> add github:dafantong01/dsh-memory-palace#<commit>
 **从本地 tgz 安装**
 
 ```
-dsh plugin --profile <profile> add ./dsh-memory-palace-0.1.0.tgz
+dsh plugin --profile <profile> add ./dafantong01-dsh-memory-palace-0.1.1.tgz
 ```
 
 装好后在 profile 的 `dsh.profile.bundles` 里确认有 `@dafantong01/dsh-memory-palace`，然后重启 DSH。
