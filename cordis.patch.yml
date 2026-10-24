@@ -1,0 +1,12 @@
+# Bundle patch layer: loads this package's main entry as a host-only Cordis plugin.
+# No client half yet: DSH renders no automatic config form for bundle rows.
+#
+# 开启方式（工作区级，fail-closed）：
+#   - 全局 enabled 是总闸，默认开；
+#   - 但插件只在「工作区里有 memory-palace/config.json 且 enabled=true」时才动作；
+#   - 人和模型都能开：聊天框输入 /palace on，或调用 palace_config。
+- insert:
+    - id: dsh-memory-palace
+      name: '@dafantong01/dsh-memory-palace'
+      config:
+        enabled: true

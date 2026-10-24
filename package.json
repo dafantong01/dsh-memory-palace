@@ -1,0 +1,57 @@
+{
+  "name": "@dafantong01/dsh-memory-palace",
+  "version": "0.1.0",
+  "description": "记忆回廊：会话到达阈值时，把近期保留段之前的整轮原文按分类归档到当前工作区，供后续会话按需检索。",
+  "author": "DaFanTong",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.1-rc.2 <0.3.0-0"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek-harness-plugin",
+    "memory",
+    "archive",
+    "session-archive",
+    "context-compaction",
+    "long-term-memory",
+    "local-first"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dafantong01/dsh-memory-palace.git"
+  },
+  "homepage": "https://github.com/dafantong01/dsh-memory-palace#readme",
+  "bugs": {
+    "url": "https://github.com/dafantong01/dsh-memory-palace/issues"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.4",
+    "fzstd": "^0.1.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  }
+}
