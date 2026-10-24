@@ -1,6 +1,6 @@
 {
   "name": "@dafantong01/dsh-memory-palace",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "记忆回廊：会话到达阈值时，把近期保留段之前的整轮原文按分类归档到当前工作区，供后续会话按需检索。",
   "author": "DaFanTong",
   "type": "module",
