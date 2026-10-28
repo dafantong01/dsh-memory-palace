@@ -317,3 +317,38 @@ Restart DSH afterwards. Enable per session via the Memory Palace tab or `/palace
 - No network calls, no attached-file bytes stored (placeholders with hashes only).
 
 **License**: MIT.
+
+## Plugin-page metadata (release check)
+
+DSH reads a plugin's plugin-page title and description through Node's package
+exports: `@scope/pkg/locale/en.json` and `@scope/pkg/package.json`. If those
+subpaths are not exported, the plugin page shows only the raw package name.
+
+Before publishing, keep both in `package.json`:
+
+```json
+"exports": {
+  "./package.json": "./package.json",
+  "./locale/*.json": "./locale/*.json"
+},
+"files": ["lib", "locale", "cordis.patch.yml", "README.md", "LICENSE", "..."],
+```
+
+`locale/en.json` and `locale/zh.json` must both contain:
+
+```json
+{ "meta": { "title": "...", "description": "..." } }
+```
+
+Verify:
+
+```bash
+# from the repo (checks fields and files)
+node scripts/check-meta.mjs .
+
+# from a profile directory, with this script copied OUTSIDE the package
+node check-meta.mjs @dafantong01/dsh-memory-palace
+```
+
+Run the installed-package form before every release; the source form only
+checks fields, not Node resolution.
