@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Memory Palace (dsh-memory-palace)",
+    "description": "Archives older conversation turns by category into the workspace and points to recent summaries after compaction; supports turn-level search and full-text read-back."
+  }
+}
