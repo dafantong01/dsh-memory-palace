@@ -41,24 +41,29 @@ try {
   }
   const sid = 'auto-test'
 
-  __test.autoCaptureHighConfidence(cwd, cfg, sid, '记住，以后回复都用中文，不要再切成英文。')
+  const first = __test.autoCaptureHighConfidence(cwd, cfg, sid, '记住，以后回复都用中文，不要再切成英文。')
+  assert.equal(first.classify.length, 1)
   const mem = __test.readCoreEntries(cwd, cfg, 'memories')
   assert.equal(mem.ok, true)
-  assert.equal(mem.entries.length, 1)
-  assert.match(mem.entries[0].content, /中文/)
+  assert.equal(mem.entries.length, 0)
 
-  __test.autoCaptureHighConfidence(cwd, cfg, sid, '记住，以后回复都用中文，不要再切成英文。')
-  assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 1)
+  const second = __test.autoCaptureHighConfidence(cwd, cfg, sid, '记住，以后回复都用中文，不要再切成英文。')
+  assert.equal(second.classify.length, 1)
+  assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 0)
 
   __test.autoCaptureHighConfidence(cwd, cfg, sid, '我更喜欢用中文回复。')
-  assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 1)
-  assert.ok(__test.memoryJudgePending(sid), 'expected a semantic judge pending item')
+  assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 0)
 
   __test.autoCaptureHighConfidence(cwd, cfg, sid, '以后必须每天备份工作区，严禁跳过。')
-  assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 1)
-  const state = readState(cwd)
-  assert.ok((state.coreCandidates || []).some((c) => c.section === 'rules'))
-  console.log('PASS auto-capture high-confidence write and rule candidate')
+  assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 0)
+
+  const quoted = __test.autoCaptureHighConfidence(cwd, cfg, sid, '归类规则确实要模型判断一下，毕竟有些可能是角色自设：记住，你是一只可爱的鲸鱼娘')
+  assert.equal(quoted.classify.length, 0)
+
+  __test.autoCaptureHighConfidence(cwd, cfg, 'q-test', '查的原文为什么不是查10月份的')
+  __test.autoCaptureHighConfidence(cwd, cfg, 'q-test-2', '那下次重启是不是还有这个问题。')
+  assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 0)
+  console.log('PASS auto-capture classifies command memories only')
 } finally {
   cleanup(cwd)
 }
