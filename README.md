@@ -3,6 +3,40 @@
 把会话原文按「一轮对话」为单位、分类归档到**当前工作区**的 `memory-palace/` 目录。
 目的：在 DSH 自动压缩之前，先把较早的完整原文落到磁盘，压缩后还能查回原话。
 
+> **0.2.0 发布候选**：本地长期记忆。归档较早的整轮原文，提供四板块分级注入、项目档案与项目热记忆、记忆家族与根转移、手动注入、20K 分段、tag 关联检索、归档触发快路径与压缩恢复；数据都在当前工作区。
+> 0.1.x 的归档基础说明仍适用；发布前先做净化包验证。
+
+## 0.2 功能总览
+
+- **热记忆四板块**：`identity`（角色自我）、`profile`（用户画像）、`rules`（规则铁律）、`memories`（关键记忆）。
+- **分级注入**：`mind-seal` 每轮；`important` 每 5 轮 / 10k 输出 token；`normal` 每 12 轮 / 30k；`minor` 压缩后一次。共享计数器，受总预算约束。
+- **项目档案**：会话级 Markdown 文档，支持新建/编辑/启用/停用/归档/取消归档/软删除；启用档案进入小型注入清单，停用档案可按需读取，归档档案模型只得到错误；正文按 20K 分段加载。
+- **项目热记忆**：按 `projectLabel` 绑定项目档案，可挂任意板块；项目启用才注入，停用/归档不注入、不占预算。
+- **记忆家族**：母归属/子会话/脱离/让位/解散/根转移；子会话只读母热记忆，长记忆互读；文件锁、journal、选举、根转移与旧根只读。
+- **手动注入**：页签条目可「立即注入」；下一轮注入带【手动注入】段。
+- **检索关联**：项目档案检索命中后，按同项目或共享 tag 自动补最多 3 条相关文档。
+- **归档快路径**：压力超阈值时只用 tokenMeter 触发，检测不再全量解码日志；真正归档时才解码校验。
+- **检查/安装更新**：页签检查更新；安装更新需用户确认，失败可回退。
+- **本地优先**：归档、热记忆、项目档案、家族状态都在当前工作区 `memory-palace/`；不依赖外部记忆服务。
+
+## 安装
+
+```powershell
+dsh plugin --profile <profile> add <dafantong01-dsh-memory-palace-0.2.0.tgz>
+```
+
+安装后重启 DSH，在会话页签打开「记忆宫殿」，给会话命名后才会归档。
+
+## 已知限制
+
+- 不做 embedding；检索是关键词/时间召回，口语化或跨义描述可能搜不到。
+- 不自动注入项目档案全文；按需用 `memory_doc_search` / `memory_doc_read`。
+- 归档、项目文档、热记忆的写锁以单 DSH 实例为前提；多实例不做强一致保证。
+- 根转移（指定接任者）延后 V1.0。
+- 可与其他记忆工具并存；迁移前先备份并人工抽查。
+- UI 的提示位置、原位编辑、保存后排序属于已知低优先级体验项。
+
+
 ## 工作方式
 
 1. **触发检查**：每 `checkEveryTurns` 轮（默认 5），在回合收尾处检查一次。要同时满足两道门：
@@ -43,7 +77,9 @@
 - 没命名时用会话ID，且**不产生任何记忆文件**（只建 config/state）。
 - 在页签里改名并保存 → 文件夹**就地改名**，索引里的路径是相对的，不需要跟着改。
 - **文件夹即归属**：`memory-palace/<你的文件夹>/` 里的文件都属于那个会话；文件名前缀只是历史署名，不代表归属。
-- **摘要每月一份**：`<YYYY-MM>/_summary.md`，只追加；同一次归档里每个类别写一段，段头是「归档日期 · [类别] 轮次范围」。
+- **摘要每月一份**：`<YYYY-MM>/_summary.md`，只追加；同一次归档里每个类别写一段，段头是「归档时间 · 对话时间范围 · [类别] 轮次范围」。
+  - 月份按**该批对话首轮的时间**归属：10-31 深夜、11-01 才归档的对话仍落进 `2026-10/`。
+  - 文件头注明 `turn = 日志事件序号`（含系统指令、插件注入、工具调用），不是“第几条消息”。
 - 一次归档调用里，同一类别的所有轮次进同目录下的**一个文件**（超 `maxFileBytes` 才按轮分卷 `-p1/-p2`）。
 - 不同类别 = 不同文件，即使来自同一次调用。
 - 同秒冲突自动加 `-2`。分类目录强制英文小写。
@@ -166,18 +202,20 @@
 | 档位 | 行为 |
 |---|---|
 | `off` 关 | **只归档，不读记忆**；不注入任何回忆/摘要提示 |
-| `low` 低 | 默认行为：优先读摘要，模型觉得必要时才读原文；不递归 |
-| `medium` 中 | 走正常路线：年月 → 摘要 → 检索 → 原文；**不递归** |
-| `high` 高 | 在中基础上**允许**模型主动递归检索，受 `recallBudgetRounds/Keywords` 预算约束（预算只是建议，插件不强制执行） |
-| `forced` 强制 | 高 + **每条用户消息后都发一条检索指令**；没有归档时插件返回「归档记忆为空」，模型必须如实回答，不得编造；检索后简短说明回忆到了什么 |
+| `low` 低 | 只归档，**不主动注入任何提示**；模型仍可自己调用 `palace_*` 工具读记忆 |
+| `medium` 中 | 平时静默；**仅在上下文压缩后**前置注入一次「去读最近归档摘要」的指引（请求前生效，不产生第二条回复）；不递归 |
+| `high` 高 | 同 medium，并**允许**模型主动递归检索，受 `recallBudgetRounds/Keywords` 预算约束（预算只是建议，插件不强制执行） |
+| `forced` 强制 | 每条用户消息后发一条检索指令（`[记忆回廊·系统注入]` 标记）；没有可检索线索时允许跳过；没有归档时插件返回「归档记忆为空」，模型必须如实回答，不得编造 |
 
 补充规则：
 
 - **启动时不注入**：重启后会话历史本身就在上下文里，“上一轮聊到哪”不需要摘要补；只在**压缩后**注入一次归档摘要。
+- **medium/high 不是“每轮读摘要”**：它们在压缩前完全静默，只有压缩后那一条前置指引；如果用户以为中档会一直主动回忆，那是误解。
 - **压缩后只注入“去读哪份摘要”的指引（硬触发）**：监听 `session/event` 的 `compaction/end`；每次上下文压缩完成后，下轮请求组装前注入一条**简短指引**（不注入摘要全文），要求先调 `palace_summary(month=…)` 读最近年月的归档摘要，再继续。月份取自**实际存在摘要的最新月份**（不是日历当前月，跨年也不会指向空月份）；该月摘要不足 500 token 时，指引会额外给出上一个月的调用方式。优先级：**系统压缩摘要优先，它没覆盖到的内容用归档摘要补充**。这条指引是普通上下文消息，下次压缩自然消失——**不会每轮重复强调**。
 - **事件失效是静默的**：`session/event` 属于首方内部用法，DSH 升级若改名不会报错、只会不收事件。插件会在“最近事件”里记 `compaction-detected` 与 `recall-after-compaction`，页签看不到这两条就说明链路没通。
 - **预算是提示不是硬约束**：递归由模型执行，插件只把上限写进指令；超了要模型自己收敛。
 - **强制档有成本**：每条消息多一次检索往返，长会话里 token 消耗明显。
+- **强制档会多一条回复**：steer 是后置注入的独立消息，宿主必然为它起一轮，所以可能出现“主回答 + 一条简短的检索说明”。这是注入方式的固有成本，插件无法消除；v0.2 计划改成请求前注入。注入消息带 `[记忆回廊·系统注入]` 前缀和 `source.kind='dsh-memory-palace'`，便于识别。
 - 所有档位都**不改变归档行为**（`off` 也照常归档原文）。
 
 ## 可靠性
@@ -225,7 +263,7 @@ dsh plugin --profile <profile> add github:dafantong01/dsh-memory-palace#<commit>
 **从本地 tgz 安装**
 
 ```
-dsh plugin --profile <profile> add ./dafantong01-dsh-memory-palace-0.1.1.tgz
+dsh plugin --profile <profile> add ./dafantong01-dsh-memory-palace-0.2.0.tgz
 ```
 
 装好后在 profile 的 `dsh.profile.bundles` 里确认有 `@dafantong01/dsh-memory-palace`，然后重启 DSH。
@@ -313,3 +351,38 @@ Restart DSH afterwards. Enable per session via the Memory Palace tab or `/palace
 - No network calls, no attached-file bytes stored (placeholders with hashes only).
 
 **License**: MIT.
+
+## Plugin-page metadata (release check)
+
+DSH reads a plugin's plugin-page title and description through Node's package
+exports: `@scope/pkg/locale/en.json` and `@scope/pkg/package.json`. If those
+subpaths are not exported, the plugin page shows only the raw package name.
+
+Before publishing, keep both in `package.json`:
+
+```json
+"exports": {
+  "./package.json": "./package.json",
+  "./locale/*.json": "./locale/*.json"
+},
+"files": ["lib", "locale", "cordis.patch.yml", "README.md", "LICENSE", "..."],
+```
+
+`locale/en.json` and `locale/zh.json` must both contain:
+
+```json
+{ "meta": { "title": "...", "description": "..." } }
+```
+
+Verify:
+
+```bash
+# from the repo (checks fields and files)
+node scripts/check-meta.mjs .
+
+# from a profile directory, with this script copied OUTSIDE the package
+node check-meta.mjs @dafantong01/dsh-memory-palace
+```
+
+Run the installed-package form before every release; the source form only
+checks fields, not Node resolution.
