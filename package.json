@@ -1,6 +1,6 @@
 {
   "name": "@dafantong01/dsh-memory-palace",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "本地长期记忆：在上下文压力升高时归档较早的整轮原文，压缩后可读回；支持 identity/profile/rules/memories 四板块分级注入、项目档案与项目热记忆、记忆家族与根转移、手动注入、20K 长文分段、tag 关联检索。数据都保存在当前工作区，不依赖外部记忆服务。",
   "author": "DaFanTong",
   "type": "module",
