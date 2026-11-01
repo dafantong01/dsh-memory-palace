@@ -32,7 +32,6 @@ dsh plugin --profile <profile> add <dafantong01-dsh-memory-palace-0.2.0.tgz>
 - 不做 embedding；检索是关键词/时间召回，口语化或跨义描述可能搜不到。
 - 不自动注入项目档案全文；按需用 `memory_doc_search` / `memory_doc_read`。
 - 归档、项目文档、热记忆的写锁以单 DSH 实例为前提；多实例不做强一致保证。
-- 根转移（指定接任者）延后 V1.0。
 - 可与其他记忆工具并存；迁移前先备份并人工抽查。
 - UI 的提示位置、原位编辑、保存后排序属于已知低优先级体验项。
 
