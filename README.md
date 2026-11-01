@@ -3,7 +3,7 @@
 把会话原文按「一轮对话」为单位、分类归档到**当前工作区**的 `memory-palace/` 目录。
 目的：在 DSH 自动压缩之前，先把较早的完整原文落到磁盘，压缩后还能查回原话。
 
-> **0.2.0 发布候选**：本地长期记忆。归档较早的整轮原文，提供四板块分级注入、项目档案与项目热记忆、记忆家族与根转移、手动注入、20K 分段、tag 关联检索、归档触发快路径与压缩恢复；数据都在当前工作区。
+> **0.2.2 发布候选**：本地长期记忆。归档较早的整轮原文，提供四板块分级注入、项目档案与项目热记忆、记忆家族与根转移、手动注入、20K 分段、tag 关联检索、归档触发快路径与压缩恢复；数据都在当前工作区。
 > 0.1.x 的归档基础说明仍适用；发布前先做净化包验证。
 
 ## 0.2 功能总览
@@ -23,7 +23,7 @@
 ## 安装
 
 ```powershell
-dsh plugin --profile <profile> add <dafantong01-dsh-memory-palace-0.2.0.tgz>
+dsh plugin --profile <profile> add @dafantong01/dsh-memory-palace
 ```
 
 安装后重启 DSH，在会话页签打开「记忆宫殿」，给会话命名后才会归档。
@@ -263,7 +263,7 @@ dsh plugin --profile <profile> add github:dafantong01/dsh-memory-palace#<commit>
 **从本地 tgz 安装**
 
 ```
-dsh plugin --profile <profile> add ./dafantong01-dsh-memory-palace-0.2.0.tgz
+dsh plugin --profile <profile> add @dafantong01/dsh-memory-palace
 ```
 
 装好后在 profile 的 `dsh.profile.bundles` 里确认有 `@dafantong01/dsh-memory-palace`，然后重启 DSH。
