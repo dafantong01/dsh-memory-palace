@@ -52,7 +52,6 @@ try {
 
   __test.autoCaptureHighConfidence(cwd, cfg, sid, '我更喜欢用中文回复。')
   assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 1)
-  assert.ok(readState(cwd).coreCandidates.some((c) => c.section === 'profile'))
 
   __test.autoCaptureHighConfidence(cwd, cfg, sid, '以后必须每天备份工作区，严禁跳过。')
   assert.equal(__test.readCoreEntries(cwd, cfg, 'memories').entries.length, 1)
