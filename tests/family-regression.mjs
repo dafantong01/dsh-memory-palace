@@ -221,9 +221,11 @@ test('explicit root transfer rekeys family and locks old root', () => {
     assert.equal(Boolean(state.families.C), true)
     assert.equal(state.families.C.rootSessionId, 'C')
     const oldMeta = readMeta(cwd, 'Root')
-    assert.equal(oldMeta.role, 'independent')
+    assert.equal(oldMeta.role, 'child')
+    assert.equal(oldMeta.familyId, 'C')
     assert.equal(oldMeta.formerRoot, true)
     assert.equal(oldMeta.archivedReadOnly, true)
+    assert.equal(state.families.C.members.some((m) => m.sessionId === 'R' && m.folder === 'Root'), true)
     assert.equal(readMeta(cwd, 'Child').role, 'root')
   } finally { cleanup(cwd) }
 })
@@ -241,6 +243,90 @@ test('docs enabled persists and unarchived docs cannot be deleted', () => {
     const archived = docs.updateDoc(cwd, 'xiaojiahuo', 'session-test', created.id, { rev: disabled.doc.rev, archived: true })
     assert.equal(archived.ok, true)
     assert.equal(docs.removeDoc(cwd, 'xiaojiahuo', 'session-test', created.id).ok, true)
+  } finally { cleanup(cwd) }
+})
+
+test('rebuild sources include root chain and member archives, exclude member cores', () => {
+  const cwd = tmp()
+  try {
+    setupFamily(cwd)
+    const mp = path.join(cwd, 'memory-palace')
+    fs.mkdirSync(path.join(mp, 'Child', '2026-11', 'test'), { recursive: true })
+    fs.writeFileSync(path.join(mp, 'Child', '2026-11', 'test', 'note.md'), 'child archive')
+    fs.mkdirSync(path.join(mp, 'Child', '_core', 'identity'), { recursive: true })
+    fs.writeFileSync(path.join(mp, 'Child', '_core', 'identity', 'private.md'), 'private core')
+    fs.mkdirSync(path.join(mp, 'Child', '_core.bak-1', 'identity'), { recursive: true })
+    fs.writeFileSync(path.join(mp, 'Child', '_core.bak-1', 'identity', 'old.md'), 'old private core')
+    fs.mkdirSync(path.join(mp, 'DSHTester', '2026-11', 'test'), { recursive: true })
+    fs.writeFileSync(path.join(mp, 'DSHTester', '2026-11', 'test', 'other.md'), 'unrelated')
+    const fam = readFamilies(cwd).families.R
+    const material = family.familyRebuildMaterial(cwd, fam)
+    assert.equal(material.has, true)
+    assert.deepEqual(material.sources.sort(), ['Child', 'Root'])
+    assert.equal(material.files.some((f) => f.includes('private.md')), false)
+    assert.equal(material.files.some((f) => f.includes('_core.bak-1')), false)
+    assert.equal(material.files.some((f) => f.includes('DSHTester')), false)
+    assert.equal(material.files.some((f) => f.includes('note.md')), true)
+  } finally { cleanup(cwd) }
+})
+
+test('rebuild material is empty when only member private cores exist', () => {
+  const cwd = tmp()
+  try {
+    setupFamily(cwd)
+    const mp = path.join(cwd, 'memory-palace')
+    fs.mkdirSync(path.join(mp, 'Child', '_core', 'identity'), { recursive: true })
+    fs.writeFileSync(path.join(mp, 'Child', '_core', 'identity', 'private.md'), 'private core')
+    fs.mkdirSync(path.join(mp, 'Child', '_core.bak-1', 'identity'), { recursive: true })
+    fs.writeFileSync(path.join(mp, 'Child', '_core.bak-1', 'identity', 'old.md'), 'old private core')
+    const material = family.familyRebuildMaterial(cwd, readFamilies(cwd).families.R)
+    assert.equal(material.has, false)
+    assert.equal(material.files.length, 0)
+  } finally { cleanup(cwd) }
+})
+
+test('markFamilyRebuild skips pending when no material', () => {
+  const cwd = tmp()
+  try {
+    setupFamily(cwd)
+    const r = family.markFamilyRebuild(cwd, 'R', 'test', { has: false, sources: [] })
+    assert.equal(r.ok, true)
+    assert.equal(r.skipped, true)
+    const fam = readFamilies(cwd).families.R
+    assert.equal(fam.rebuildPending, false)
+    assert.equal(fam.rebuildDecision, 'nothing-to-rebuild')
+  } finally { cleanup(cwd) }
+})
+
+test('markFamilyRebuild persists sources when material exists', () => {
+  const cwd = tmp()
+  try {
+    setupFamily(cwd)
+    const material = family.familyRebuildMaterial(cwd, readFamilies(cwd).families.R)
+    assert.equal(material.has, false)
+    material.has = true
+    material.sources = ['Root', 'Child']
+    const r = family.markFamilyRebuild(cwd, 'R', 'test', material)
+    assert.equal(r.ok, true)
+    const fam = readFamilies(cwd).families.R
+    assert.equal(fam.rebuildPending, true)
+    assert.deepEqual(fam.rebuildSources, ['Root', 'Child'])
+  } finally { cleanup(cwd) }
+})
+
+test('root transfer does not touch personal core backups', () => {
+  const cwd = tmp()
+  try {
+    family.assignRoot(cwd, { sessionId: 'R', folder: 'Root', name: 'Root' })
+    writeRootConfig(cwd, 'Root')
+    family.joinFamily(cwd, { rootSessionId: 'R', sessionId: 'C', folder: 'Child', name: 'Child' })
+    const bak = path.join(cwd, 'memory-palace', 'Root', '_core.bak-20260101-000000')
+    fs.mkdirSync(path.join(bak, 'identity'), { recursive: true })
+    fs.writeFileSync(path.join(bak, 'identity', 'private.md'), 'private')
+    const r = family.transferRoot(cwd, { familyId: 'R', fromSessionId: 'R', newRootSessionId: 'C', newRootName: 'Child' })
+    assert.equal(r.ok, true)
+    assert.equal(fs.existsSync(path.join(bak, 'identity', 'private.md')), true)
+    assert.equal(readMeta(cwd, 'Root').role, 'child')
   } finally { cleanup(cwd) }
 })
 
