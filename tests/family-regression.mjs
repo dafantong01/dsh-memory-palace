@@ -330,6 +330,56 @@ test('root transfer does not touch personal core backups', () => {
   } finally { cleanup(cwd) }
 })
 
+test('renameFamilyFolder updates folder records without changing family displayName', () => {
+  const cwd = tmp()
+  try {
+    setupFamily(cwd)
+    family.renameFamilyFolder(cwd, 'R', 'Root2', 'Root2')
+    family.renameFamilyFolder(cwd, 'C', 'Child2', 'Child2')
+    const fam = readFamilies(cwd).families.R
+    assert.equal(fam.rootFolder, 'Root2')
+    assert.equal(fam.displayName, 'Root')
+    assert.equal(fam.members[0].folder, 'Child2')
+    assert.equal(fam.members[0].name, 'Child2')
+  } finally { cleanup(cwd) }
+})
+
+test('renameFamilyDisplayName only changes displayName', () => {
+  const cwd = tmp()
+  try {
+    setupFamily(cwd)
+    const r = family.renameFamilyDisplayName(cwd, 'R', 'LingYanyue')
+    assert.equal(r.ok, true)
+    const fam = readFamilies(cwd).families.R
+    assert.equal(fam.displayName, 'LingYanyue')
+    assert.equal(fam.rootFolder, 'Root')
+    assert.equal(fam.members[0].folder, 'Child')
+  } finally { cleanup(cwd) }
+})
+
+test('renameFamilyDisplayName rejects child', () => {
+  const cwd = tmp()
+  try {
+    setupFamily(cwd)
+    const r = family.renameFamilyDisplayName(cwd, 'C', 'Nope')
+    assert.equal(r.ok, false)
+    assert.match(r.error, /母归属/)
+  } finally { cleanup(cwd) }
+})
+
+test('cleanup keeps family when namespace mapping points to renamed folder', () => {
+  const cwd = tmp()
+  try {
+    family.assignRoot(cwd, { sessionId: 'R', folder: 'Root', name: 'Root' })
+    writeRootConfig(cwd, 'Root')
+    fs.renameSync(path.join(cwd, 'memory-palace', 'Root'), path.join(cwd, 'memory-palace', 'Root2'))
+    fs.writeFileSync(path.join(cwd, 'memory-palace', '.namespaces.json'), JSON.stringify({ R: 'Root2' }))
+    family.cleanupEmptyFamilies(cwd)
+    assert.equal(Boolean(readFamilies(cwd).families.R), true)
+    assert.equal(family.familyStatus(cwd, 'R').membership.family.status, 'active')
+  } finally { cleanup(cwd) }
+})
+
 const failed = results.filter(([status]) => status === 'FAIL')
 for (const [status, name, detail] of results) {
   console.log(`${status} ${name}${detail ? ` :: ${detail}` : ''}`)
