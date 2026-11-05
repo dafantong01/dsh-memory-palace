@@ -36,7 +36,7 @@ function readState(cwd) {
 const cwd = tmp()
 try {
   const cfg = makeCfg()
-  for (const board of ['identity', 'profile', 'rules', 'memories']) {
+  for (const board of ['identity', 'user', 'rules', 'memories']) {
     fs.mkdirSync(path.join(cwd, 'memory-palace', 'test', '_core', board), { recursive: true })
   }
   const sid = 'auto-test'
