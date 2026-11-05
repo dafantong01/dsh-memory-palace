@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Memory Palace (dsh-memory-palace)",
-    "description": "Local long-term memory: archives older turns under context pressure and reads them back after compaction; supports four tiered hot-memory boards (identity/profile/rules/memories), project documents and project hot memory, memory families with root transfer, manual injection, 20K segmented reading, and tag-based related retrieval. All data stays in the current workspace."
+    "description": "Local long-term memory: archives older turns under context pressure and reads them back after compaction; supports four tiered hot-memory boards (identity / user 板块 / rules / memories), project documents and project hot memory, memory families with root transfer, manual injection, 20K segmented reading, and tag-based related retrieval. All data stays in the current workspace."
   }
 }
