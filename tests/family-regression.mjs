@@ -36,6 +36,7 @@ function readFamilies(cwd) {
   return JSON.parse(fs.readFileSync(path.join(cwd, 'memory-palace', 'families.json'), 'utf8'))
 }
 function setupFamily(cwd) {
+  writeRootConfig(cwd, 'Root')
   family.assignRoot(cwd, { sessionId: 'R', folder: 'Root', name: 'Root' })
   family.joinFamily(cwd, { rootSessionId: 'R', sessionId: 'C', folder: 'Child', name: 'Child' })
 }
@@ -53,18 +54,48 @@ test('root without config is orphaned, restored config is active', () => {
   const cwd = tmp()
   try {
     setupFamily(cwd)
+    fs.rmSync(path.join(cwd, 'memory-palace', 'Root', 'config.json'), { force: true })
     assert.equal(family.familyStatus(cwd, 'R').membership.family.status, 'orphaned')
     writeRootConfig(cwd, 'Root')
     assert.equal(family.familyStatus(cwd, 'R').membership.family.status, 'active')
   } finally { cleanup(cwd) }
 })
 
-test('empty unreadable family is cleaned to independent', () => {
+test('empty orphan family is cleaned by default', () => {
   const cwd = tmp()
   try {
     family.assignRoot(cwd, { sessionId: 'R', folder: 'Root', name: 'Root' })
     assert.equal(family.familyStatus(cwd, 'R').membership, null)
     assert.equal(Object.keys(readFamilies(cwd).families).length, 0)
+  } finally { cleanup(cwd) }
+})
+
+test('dissolve after empty-family cleanup reports family missing', () => {
+  const cwd = tmp()
+  try {
+    family.assignRoot(cwd, { sessionId: 'R', folder: 'Root', name: 'Root' })
+    family.familyStatus(cwd, 'R')
+    const r = family.dissolveFamily(cwd, 'R')
+    assert.equal(r.ok, false)
+    assert.equal(r.code, 'family-not-found')
+  } finally { cleanup(cwd) }
+})
+
+test('orphan family with members rejects join and supports takeover', () => {
+  const cwd = tmp()
+  try {
+    writeRootConfig(cwd, 'Taker')
+    setupFamily(cwd)
+    fs.rmSync(path.join(cwd, 'memory-palace', 'Root', 'config.json'), { force: true })
+    const st = family.familyStatus(cwd, 'T')
+    assert.equal(st.candidates[0].needsTakeover, true)
+    const joined = family.joinFamily(cwd, { rootSessionId: 'R', sessionId: 'T', folder: 'Taker', name: 'Taker' })
+    assert.equal(joined.ok, false)
+    assert.equal(joined.code, 'orphaned-family')
+    const taken = family.takeoverFamily(cwd, { familyId: 'R', sessionId: 'T', folder: 'Taker', name: 'Taker' })
+    assert.equal(taken.ok, true)
+    assert.equal(taken.family.rootSessionId, 'T')
+    assert.equal(family.familyStatus(cwd, 'T').membership.role, 'root')
   } finally { cleanup(cwd) }
 })
 
