@@ -220,7 +220,9 @@ try {
   }
   const manifest = core.writeChunks(paths, [{ type: 'x' }], { logPath: 'log', logSize: 1, mtimeMs: 1 })
   assert.equal(manifest.chunks.length, 1)
-  assert.deepEqual(fs.readdirSync(paths.chunks), ['chunk-000001.jsonl.gz'])
+  const leftChunks = fs.readdirSync(paths.chunks)
+  assert.equal(leftChunks.length, 1)
+  assert.match(leftChunks[0], /^chunk-000001-[0-9a-f]{8}\.jsonl\.gz$/)
 
   console.log('SUMMARY summary-cache 9/9')
 } finally {
