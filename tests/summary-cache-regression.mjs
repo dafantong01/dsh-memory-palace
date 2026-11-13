@@ -129,10 +129,19 @@ try {
   assert.match(own, /2026-10/)
   assert.match(own, /childonly/)
 
+  // 零命中先鼓励换词两次，第 3 次才按 fallback 停。
+  for (let i = 0; i < 2; i++) {
+    const retry = await def.execute({ keyword: 'nothing-here', fallback: 'full-search' }, { agent })
+    assert.match(retry, /再试/)
+  }
   const full = await def.execute({ keyword: 'nothing-here', fallback: 'full-search' }, { agent })
   assert.match(full, /palace_search/)
 
-  const ask = await def.execute({ keyword: 'nothing-here', fallback: 'ask-user' }, { agent })
+  for (let i = 0; i < 2; i++) {
+    const retry = await def.execute({ keyword: 'nothing-ask', fallback: 'ask-user' }, { agent })
+    assert.match(retry, /再试/)
+  }
+  const ask = await def.execute({ keyword: 'nothing-ask', fallback: 'ask-user' }, { agent })
   assert.match(ask, /询问用户/)
 
   const rootAssign = family.assignRoot(root, { sessionId: 'root', folder: 'Root', name: 'Root' })
