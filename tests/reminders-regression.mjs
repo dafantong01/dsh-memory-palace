@@ -55,10 +55,11 @@ due = dueReminders(
 )
 assert.deepEqual(due.map((x) => x.id), ['p1'])
 assert.deepEqual(dueReminders([r('p2', { type: 'pressure', threshold: 65 })], { pressure: 60 }), [])
-// 锁存：越过阈值只触发一次，回落后再武装
+// 锁存：越过阈值只触发一次；回落到阈值以下重新武装
 assert.deepEqual(dueReminders([r('p3', { type: 'pressure', threshold: 65 }, { pressureAbove: true })], { pressure: 70 }), [])
 assert.equal(resetPressureLatch([r('p4', { type: 'pressure', threshold: 65 }, { pressureAbove: true })], 60).changed, true)
 assert.equal(resetPressureLatch([r('p5', { type: 'pressure', threshold: 65 }, { pressureAbove: true })], 70).changed, false)
+assert.equal(resetPressureLatch([r('p6', { type: 'pressure', threshold: 65 }, { pressureAbove: false })], 60).changed, false)
 
 due = dueReminders([r('e1', { type: 'event', kind: 'compaction' })], { compaction: true })
 assert.deepEqual(due.map((x) => x.id), ['e1'])
