@@ -5,23 +5,25 @@ import path from 'node:path'
 import {
   addTrivia, listTrivia, readTrivia, updateTrivia, recordAccess,
   removeTrivia, ageTrivia, pendingReviewItems, validateTriviaText, normalizeTriviaTags, keepTrivia,
+  invalidateTriviaCache,
 } from '../lib/trivia.js'
 import { expiryAt } from '../lib/trivia-age.js'
 
 const day = 24 * 60 * 60 * 1000
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mp-trivia-'))
-const cfg = { dir: path.join(root, 'ns') }
+const cfg = { dir: path.join(root, 'ns'), triviaAutoReview: false }
 const indexFile = () => path.join(cfg.dir, 'trivia', 'index.jsonl')
 const trashDir = () => path.join(cfg.dir, 'trivia', '.triviatrash')
 const writeIndex = (items) => {
   fs.mkdirSync(path.dirname(indexFile()), { recursive: true })
   fs.writeFileSync(indexFile(), items.map((x) => JSON.stringify(x)).join('\n') + '\n', 'utf8')
+  invalidateTriviaCache(cfg)
 }
 
 try {
   assert.equal(validateTriviaText('x'.repeat(51)).ok, false)
   assert.equal(validateTriviaText('  小张说 C929 的山葵酱好吃  ').ok, true)
-  assert.equal(normalizeTriviaTags(['a', 'a', 'b']).tags.length, 2)
+  assert.equal(normalizeTriviaTags(['苹果', '苹果', '香蕉']).tags.length, 2)
   assert.equal(normalizeTriviaTags(['苹果']).ok, true)
   assert.equal(normalizeTriviaTags(['小张']).ok, true)
   assert.equal(normalizeTriviaTags(['骨折']).ok, true)
@@ -37,8 +39,8 @@ try {
   assert.equal(normalizeTriviaTags(['骨折了']).ok, true)
   assert.equal(normalizeTriviaTags(['东西']).ok, false)
   assert.equal(addTrivia(cfg, { text: '无 tag 条目', tags: [] }).ok, false)
-  assert.equal(normalizeTriviaTags(['a', 'b', 'c', 'd', 'e']).ok, true)
-  assert.equal(normalizeTriviaTags(['a', 'b', 'c', 'd', 'e', 'f']).ok, false)
+  assert.equal(normalizeTriviaTags(['alpha', 'beta', 'gamma', 'delta', 'epsilon']).ok, true)
+  assert.equal(normalizeTriviaTags(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']).ok, false)
   assert.equal(normalizeTriviaTags(['x'.repeat(17)]).ok, false)
   console.log('PASS validate')
 
