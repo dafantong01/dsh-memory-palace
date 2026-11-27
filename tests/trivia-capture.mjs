@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { extractCaptureCandidate, hasStructuralCaptureSignal, extractExplicitEntities, isCaptureQuestion } from '../lib/trivia.js'
+import { extractCaptureCandidate, hasStructuralCaptureSignal, extractExplicitEntities, isCaptureQuestion, withCaptureContext } from '../lib/trivia.js'
 
 const text = '我先查了缓存。发现根因是旧 manifest 的 mtime 校验失败。今天天气不错。建议下次先校验。'
 const cand = extractCaptureCandidate(text, ['缓存', 'manifest'], '自动捕获')
@@ -31,6 +31,11 @@ const questionCand = extractCaptureCandidate('那个结构是不是前面修过�
 assert.ok(questionCand)
 assert.equal(isCaptureQuestion(questionCand.text), true)
 assert.equal(extractCaptureCandidate('那个结构是不是前面修过了', [], '自动捕获', { structuralOnly: true, excludeQuestions: true }), null)
+assert.equal(extractCaptureCandidate('只要写清楚什么人地事就好了吧', [], '自动捕获', { structuralOnly: true, excludeContextDependent: true }), null)
+const ctx = withCaptureContext('第一句背景。备份从两点改到四点。第三句结果。', '备份从两点改到四点', 240)
+assert.ok(ctx.includes('第一句背景'))
+assert.ok(ctx.includes('备份从两点改到四点'))
+assert.ok(ctx.includes('第三句结果'))
 const mixedCand = extractCaptureCandidate('备份时间从凌晨两点改到凌晨四点，为什么要改？', [], '自动捕获', { structuralOnly: true, excludeQuestions: true })
 assert.ok(mixedCand)
 assert.equal(isCaptureQuestion(mixedCand.text), false)
@@ -41,4 +46,4 @@ assert.deepEqual(extractExplicitEntities('老王说下午三点开会'), ['老�
 assert.deepEqual(extractExplicitEntities('@alice_smith 说部署完成'), ['alice_smith'])
 assert.deepEqual(extractExplicitEntities('我叫了外卖'), [])
 assert.deepEqual(extractExplicitEntities('我要买苹果'), [])
-console.log('SUMMARY trivia-capture 34/34')
+console.log('SUMMARY trivia-capture 39/39')
