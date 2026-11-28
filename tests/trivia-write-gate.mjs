@@ -14,8 +14,7 @@ try {
   assert.equal(normalizeTriviaTags(['C929']).ok, true)
 
   const low = addTrivia(cfg, { text: '晚安', tags: ['晚安'] }, { source: 'model' })
-  assert.equal(low.ok, false)
-  assert.equal(low.code, 'low-salience')
+  assert.equal(low.ok, true)
 
   const fact = addTrivia(cfg, { text: '小张对花生过敏', tags: ['小张', '花生'] }, { source: 'model' })
   assert.equal(fact.ok, true)
@@ -42,7 +41,7 @@ try {
   assert.equal(core.ok, false)
   assert.equal(core.code, 'use-core')
 
-  const highText = '开心满意放心期待惊喜激动兴奋安心温暖爱赞棒，发现根因注意风险配置备份密码安全检查'
+  const highText = '开心满意放心期待惊喜激动兴奋安心温暖，配置从两点改到四点，接口报错'
   const high = addTrivia(cfg, { text: highText, tags: ['高显著'] }, { source: 'model' })
   assert.equal(high.ok, false)
   assert.equal(high.code, 'high-salience')

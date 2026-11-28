@@ -21,7 +21,7 @@ const writeIndex = (items) => {
 }
 
 try {
-  assert.equal(validateTriviaText('x'.repeat(51)).ok, false)
+  assert.equal(validateTriviaText('x'.repeat(61)).ok, false)
   assert.equal(validateTriviaText('  小张说 C929 的山葵酱好吃  ').ok, true)
   assert.equal(normalizeTriviaTags(['苹果', '苹果', '香蕉']).tags.length, 2)
   assert.equal(normalizeTriviaTags(['苹果']).ok, true)

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { extractCaptureCandidate, hasStructuralCaptureSignal, extractExplicitEntities, isCaptureQuestion, withCaptureContext, tagMatchesText } from '../lib/trivia.js'
+import { extractCaptureCandidate, hasStructuralCaptureSignal, extractExplicitEntities, isCaptureQuestion, withCaptureContext, tagMatchesText, suggestCaptureTag, planCaptureTag, matchTagPool } from '../lib/trivia.js'
 
 const text = '我先查了缓存。发现根因是旧 manifest 的 mtime 校验失败。今天天气不错。建议下次先校验。'
 const cand = extractCaptureCandidate(text, ['缓存', 'manifest'], '自动捕获')
@@ -7,7 +7,7 @@ assert.ok(cand)
 assert.equal(cand.text, '发现根因是旧 manifest 的 mtime 校验失败')
 assert.deepEqual(cand.tags, ['manifest'])
 
-const long = extractCaptureCandidate('发现测试环境数据库备份配置需要从凌晨两点改到凌晨四点否则和同步任务冲突而且旧配置会导致恢复失败并且影响日志轮转', [], '自动捕获')
+const long = extractCaptureCandidate('发现测试环境数据库备份配置需要从凌晨两点改到凌晨四点否则和同步任务冲突而且旧配置会导致恢复失败并且影响日志轮转还会继续延长这段描述确认超过上限', [], '自动捕获')
 assert.ok(long)
 assert.equal(long.needsReview, true)
 assert.ok(long.raw.length > 50)
@@ -52,6 +52,15 @@ assert.equal(tagMatchesText('walk', 'walked home'), true)
 assert.equal(tagMatchesText('study', 'studies'), true)
 assert.equal(tagMatchesText('stop', 'stopped'), true)
 assert.equal(tagMatchesText('fly', 'butterfly'), false)
+assert.equal(suggestCaptureTag('明天下午三点开会'), '开会')
+assert.equal(suggestCaptureTag('接口 502 报错'), '接口')
+assert.equal(suggestCaptureTag('脖子疼'), '脖子')
+assert.equal(suggestCaptureTag('flying high'), 'flying')
+assert.equal(planCaptureTag('明天下午三点开会', []).confidence, 0.65)
+assert.equal(planCaptureTag('上海备份改到四点', []).confidence, 0.85)
+assert.equal(planCaptureTag('今天打架了', ['打架']).kind, 'existing')
+assert.equal(matchTagPool('坐了飞机', [{ name: '坐飞机', rank: 2, count: 3 }])[0].tag, '坐飞机')
+assert.equal(matchTagPool('坐飞机', [{ name: '打架', rank: 1, count: 1 }]).length, 0)
 assert.equal(tagMatchesText('打架', '明天开会'), false)
 const mixedCand = extractCaptureCandidate('备份时间从凌晨两点改到凌晨四点，为什么要改？', [], '自动捕获', { structuralOnly: true, excludeQuestions: true })
 assert.ok(mixedCand)
